@@ -1,0 +1,26 @@
+site_name: ClusterSet - a Kubernetes controller to automate Argo CD cluster onboarding
+repo_url: https://github.com/crenshaw-dev/cluster-set
+site_url: https://argo-cluster-set.readthedocs.io/
+theme:
+  font:
+    text: Work Sans
+  logo: assets/logo.png
+  name: material
+  palette:
+    - primary: teal
+      scheme: default
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode
+markdown_extensions:
+  - markdown_include.include
+  - codehilite:
+      css_class: highlight
+  - admonition
+  - pymdownx.superfences
+nav:
+  - CRD Specs: crd-specs.md

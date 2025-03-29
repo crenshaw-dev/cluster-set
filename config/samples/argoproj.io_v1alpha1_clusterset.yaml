@@ -1,0 +1,9 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ClusterSet
+metadata:
+  labels:
+    app.kubernetes.io/name: cluster-set
+    app.kubernetes.io/managed-by: kustomize
+  name: clusterset-sample
+spec:
+  # TODO(user): Add fields here
