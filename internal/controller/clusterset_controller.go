@@ -20,6 +20,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/crenshaw-dev/cluster-set/internal/controller/argocd"
+	"github.com/crenshaw-dev/cluster-set/internal/generators"
+	"github.com/crenshaw-dev/cluster-set/internal/template"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -27,7 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	argoprojiov1alpha1 "github.com/crenshaw-dev/cluster-set/api/v1alpha1"
+	"github.com/crenshaw-dev/cluster-set/api/v1alpha1"
 )
 
 // ClusterSetReconciler reconciles a ClusterSet object
@@ -52,7 +55,7 @@ type ClusterSetReconciler struct {
 func (r *ClusterSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	var cs argoprojiov1alpha1.ClusterSet
+	var cs v1alpha1.ClusterSet
 	if err := r.Get(ctx, req.NamespacedName, &cs); err != nil {
 		if errors.IsNotFound(err) {
 			logger.Info("ClusterSet not found")
@@ -62,33 +65,51 @@ func (r *ClusterSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, fmt.Errorf("unable to fetch ClusterSet: %w", err)
 	}
 
-	// TODO: actually process the template instead of applying it directly as a secret.
-	secret, err := argocd.ClusterTemplateToSecret(cs.Spec.Template)
-	if err != nil {
-		logger.Error(err, "unable to convert ClusterTemplate to Secret")
-		return ctrl.Result{}, fmt.Errorf("unable to convert ClusterTemplate to Secret: %w", err)
+	if cs.Spec.Generator.List == nil {
+		// TODO: support more than just list generator
+		return ctrl.Result{}, fmt.Errorf("list generator must not be nil")
 	}
-	secret.Namespace = cs.Namespace
 
-	err = r.Client.Get(ctx, client.ObjectKey{Namespace: secret.Namespace, Name: secret.Name}, secret)
+	paramsList, err := generators.GetParametersFromListGenerator(cs.Spec.Generator.List)
 	if err != nil {
-		if errors.IsNotFound(err) {
-			logger.Info("Creating secret", "name", secret.Name)
-			err = r.Client.Create(ctx, secret)
-			if err != nil {
-				logger.Error(err, "unable to create secret")
-				return ctrl.Result{}, fmt.Errorf("unable to create secret: %w", err)
+		return ctrl.Result{}, fmt.Errorf("unable to get parameters from list generator: %w", err)
+	}
+
+	var t *v1alpha1.ClusterTemplate
+	var secret *v1.Secret
+	for i := range paramsList {
+		t, err = template.Render(&cs.Spec.Template, paramsList[i])
+		if err != nil {
+			return ctrl.Result{}, fmt.Errorf("failed to template using params at index %d: %w", i, err)
+		}
+		secret, err = argocd.ClusterTemplateToSecret(*t)
+		if err != nil {
+			return ctrl.Result{}, fmt.Errorf("failed to convert cluster to secret from params at index %d: %w", i, err)
+		}
+
+		// Namespace is always the same as the ClusterSet
+		secret.Namespace = cs.Namespace
+
+		err = r.Client.Get(ctx, client.ObjectKey{Namespace: secret.Namespace, Name: secret.Name}, secret)
+		if err != nil {
+			if errors.IsNotFound(err) {
+				logger.Info("Creating secret", "name", secret.Name)
+				err = r.Client.Create(ctx, secret)
+				if err != nil {
+					logger.Error(err, "unable to create secret")
+					return ctrl.Result{}, fmt.Errorf("unable to create secret: %w", err)
+				}
+			} else {
+				logger.Error(err, "unable to get secret")
+				return ctrl.Result{}, fmt.Errorf("unable to get secret: %w", err)
 			}
 		} else {
-			logger.Error(err, "unable to get secret")
-			return ctrl.Result{}, fmt.Errorf("unable to get secret: %w", err)
-		}
-	} else {
-		logger.Info("Updating secret", "name", secret.Name)
-		err = r.Client.Update(ctx, secret)
-		if err != nil {
-			logger.Error(err, "unable to update secret")
-			return ctrl.Result{}, fmt.Errorf("unable to update secret: %w", err)
+			logger.Info("Updating secret", "name", secret.Name)
+			err = r.Client.Update(ctx, secret)
+			if err != nil {
+				logger.Error(err, "unable to update secret")
+				return ctrl.Result{}, fmt.Errorf("unable to update secret: %w", err)
+			}
 		}
 	}
 
@@ -98,7 +119,7 @@ func (r *ClusterSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 // SetupWithManager sets up the controller with the Manager.
 func (r *ClusterSetReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&argoprojiov1alpha1.ClusterSet{}).
+		For(&v1alpha1.ClusterSet{}).
 		Named("clusterset").
 		Complete(r)
 }

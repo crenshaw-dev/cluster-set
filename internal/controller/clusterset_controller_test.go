@@ -21,6 +21,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -52,12 +53,21 @@ var _ = Describe("ClusterSet Controller", func() {
 						Namespace: "default",
 					},
 					Spec: argoprojiov1alpha1.ClusterSetSpec{
+						Generator: argoprojiov1alpha1.ClusterSetGenerator{
+							List: &argoprojiov1alpha1.ListGenerator{
+								Elements: []apiextensionsv1.JSON{
+									{
+										Raw: []byte(`{"server": "https://example.com"}`),
+									},
+								},
+							},
+						},
 						Template: argoprojiov1alpha1.ClusterTemplate{
 							Metadata: argoprojiov1alpha1.ClusterTemplateMetadata{
 								Name: resourceName,
 							},
 							Spec: argoprojiov1alpha1.ClusterTemplateSpec{
-								Server: "https://example.com",
+								Server: "{{ .server }}",
 							},
 						},
 					},
