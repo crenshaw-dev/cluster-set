@@ -62,15 +62,13 @@ spec:
                     description: Metadata is the metadata of the cluster template.
                     properties:
                       annotations:
-                        additionalProperties:
-                          type: string
-                        description: Annotations for cluster secret metadata.
-                        type: object
+                        description: Annotations for cluster secret metadata. Must
+                          be a JSON or YAML string.
+                        type: string
                       labels:
-                        additionalProperties:
-                          type: string
-                        description: Labels for cluster secret metadata.
-                        type: object
+                        description: Labels for cluster secret metadata. Must be a
+                          JSON or YAML string.
+                        type: string
                       name:
                         description: Name is the name of the cluster Secret.
                         type: string

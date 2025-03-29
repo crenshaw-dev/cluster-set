@@ -12,8 +12,12 @@ spec:
   template:
     metadata:
       name: "{{.name}}"
-      labels: {}
-      annotations: {}
+
+      # Labels and annotations are YAML/JSON strings for flexible templating.
+      labels: |
+        example: label
+      annotations: |
+        example: annotation
     spec:
       server: "{{.server}}"
       name: "{{.name}}"

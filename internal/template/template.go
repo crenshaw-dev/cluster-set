@@ -82,29 +82,6 @@ func deeplyReplace(copy, original reflect.Value, replaceMap map[string]any) erro
 			return err
 		}
 
-	// If it is an interface (which is very similar to a pointer), do basically the
-	// same as for the pointer. Though a pointer is not the same as an interface so
-	// note that we have to call Elem() after creating a new object because otherwise
-	// we would end up with an actual pointer
-	case reflect.Interface:
-		// Get rid of the wrapping interface
-		originalValue := original.Elem()
-		// Create a new object. Now new gives us a pointer, but we want the value it
-		// points to, so we have to call Elem() to unwrap it
-
-		if originalValue.IsValid() {
-			reflectType := originalValue.Type()
-
-			reflectValue := reflect.New(reflectType)
-
-			copyValue := reflectValue.Elem()
-			if err := deeplyReplace(copyValue, originalValue, replaceMap); err != nil {
-				// Not wrapping the error, since this is a recursive function. Avoids excessively long error messages.
-				return err
-			}
-			copy.Set(copyValue)
-		}
-
 	// If it is a struct we translate each field
 	case reflect.Struct:
 		for i := 0; i < original.NumField(); i++ {
@@ -112,54 +89,6 @@ func deeplyReplace(copy, original reflect.Value, replaceMap map[string]any) erro
 				// Not wrapping the error, since this is a recursive function. Avoids excessively long error messages.
 				return err
 			}
-		}
-
-	// If it is a slice we create a new slice and translate each element
-	case reflect.Slice:
-		if copy.CanSet() {
-			copy.Set(reflect.MakeSlice(original.Type(), original.Len(), original.Cap()))
-		} else {
-			copyValueIntoUnexported(copy, reflect.MakeSlice(original.Type(), original.Len(), original.Cap()))
-		}
-
-		for i := 0; i < original.Len(); i++ {
-			if err := deeplyReplace(copy.Index(i), original.Index(i), replaceMap); err != nil {
-				// Not wrapping the error, since this is a recursive function. Avoids excessively long error messages.
-				return err
-			}
-		}
-
-	// If it is a map we create a new map and translate each value
-	case reflect.Map:
-		if copy.CanSet() {
-			copy.Set(reflect.MakeMap(original.Type()))
-		} else {
-			copyValueIntoUnexported(copy, reflect.MakeMap(original.Type()))
-		}
-		for _, key := range original.MapKeys() {
-			originalValue := original.MapIndex(key)
-			if originalValue.Kind() != reflect.String && isNillable(originalValue) && originalValue.IsNil() {
-				continue
-			}
-			// New gives us a pointer, but again we want the value
-			copyValue := reflect.New(originalValue.Type()).Elem()
-
-			if err := deeplyReplace(copyValue, originalValue, replaceMap); err != nil {
-				// Not wrapping the error, since this is a recursive function. Avoids excessively long error messages.
-				return err
-			}
-
-			// Keys can be templated as well as values (e.g. to template something into an annotation).
-			if key.Kind() == reflect.String {
-				templatedKey, err := replace(key.String(), replaceMap)
-				if err != nil {
-					// Not wrapping the error, since this is a recursive function. Avoids excessively long error messages.
-					return err
-				}
-				key = reflect.ValueOf(templatedKey)
-			}
-
-			copy.SetMapIndex(key, copyValue)
 		}
 
 	// Otherwise we cannot traverse anywhere so this finishes the recursion
@@ -180,23 +109,11 @@ func deeplyReplace(copy, original reflect.Value, replaceMap map[string]any) erro
 
 	// And everything else will simply be taken from the original
 	default:
-		if copy.CanSet() {
-			copy.Set(original)
-		} else {
-			copyUnexported(copy, original)
-		}
+		// We only support pointers, structs, or strings. More complex types should be represented as YAML/JSON strings
+		// for the greatest templating flexibility.
+		return fmt.Errorf("failed to template field of type %T: must be pointer, struct, or string", original)
 	}
 	return nil
-}
-
-// isNillable returns true if the value is something which may be set to nil. This function is meant to guard against a
-// panic from calling IsNil on a non-pointer type.
-func isNillable(v reflect.Value) bool {
-	switch v.Kind() {
-	case reflect.Map, reflect.Pointer, reflect.UnsafePointer, reflect.Interface, reflect.Slice:
-		return true
-	}
-	return false
 }
 
 // Replace executes basic string substitution of a template with replacement values.

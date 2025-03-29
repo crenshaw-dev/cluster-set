@@ -87,11 +87,11 @@ type ClusterTemplateMetadata struct {
 	// +kubebuilder:validation:Required
 	Name string `json:"name"`
 
-	// Labels for cluster secret metadata.
-	Labels map[string]string `json:"labels,omitempty"`
+	// Labels for cluster secret metadata. Must be a JSON or YAML string.
+	Labels string `json:"labels,omitempty"`
 
-	// Annotations for cluster secret metadata.
-	Annotations map[string]string `json:"annotations,omitempty"`
+	// Annotations for cluster secret metadata. Must be a JSON or YAML string.
+	Annotations string `json:"annotations,omitempty"`
 }
 
 /**

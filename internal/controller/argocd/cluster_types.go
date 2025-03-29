@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"gopkg.in/yaml.v3"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -123,11 +124,24 @@ func ClusterTemplateToSecret(t v1alpha1.ClusterTemplate) (*corev1.Secret, error)
 		secretData[key] = []byte(base64.StdEncoding.EncodeToString([]byte(value)))
 	}
 
+	var labels map[string]string
+	err = yaml.Unmarshal([]byte(t.Metadata.Labels), &labels)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal labels: %w", err)
+	}
+
+	var annotations map[string]string
+	err = yaml.Unmarshal([]byte(t.Metadata.Annotations), &annotations)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal annotations: %w", err)
+	}
+
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        t.Metadata.Name,
-			Labels:      t.Metadata.Labels,
-			Annotations: t.Metadata.Annotations,
+			Name: t.Metadata.Name,
+			// Do not set Namespace, that's inferred from the ClusterSet resource.
+			Labels:      labels,
+			Annotations: annotations,
 		},
 		Data: secretData,
 	}
