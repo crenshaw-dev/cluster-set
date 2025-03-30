@@ -19,18 +19,18 @@ package controller
 import (
 	"context"
 	"fmt"
-	"github.com/crenshaw-dev/cluster-set/internal/controller/argocd"
-	"github.com/crenshaw-dev/cluster-set/internal/generators"
-	"github.com/crenshaw-dev/cluster-set/internal/template"
+
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/crenshaw-dev/cluster-set/api/v1alpha1"
+	"github.com/crenshaw-dev/cluster-set/internal/controller/argocd"
+	"github.com/crenshaw-dev/cluster-set/internal/generators"
+	"github.com/crenshaw-dev/cluster-set/internal/template"
 )
 
 // ClusterSetReconciler reconciles a ClusterSet object

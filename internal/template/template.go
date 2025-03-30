@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"reflect"
 	"text/template"
-	"unsafe"
 
 	"github.com/crenshaw-dev/cluster-set/api/v1alpha1"
 	sprig "github.com/go-task/slim-sprig/v3"
@@ -44,17 +43,6 @@ func Render(tmpl *v1alpha1.ClusterTemplate, params map[string]any) (*v1alpha1.Cl
 	return replacedTmpl, nil
 }
 
-func copyValueIntoUnexported(destination, value reflect.Value) {
-	reflect.NewAt(destination.Type(), unsafe.Pointer(destination.UnsafeAddr())).
-		Elem().
-		Set(value)
-}
-
-func copyUnexported(copy, original reflect.Value) {
-	unexported := reflect.NewAt(original.Type(), unsafe.Pointer(original.UnsafeAddr())).Elem()
-	copyValueIntoUnexported(copy, unexported)
-}
-
 // This function is in charge of searching all String fields of the object recursively and apply templating
 // thanks to https://gist.github.com/randallmlough/1fd78ec8a1034916ca52281e3b886dc7
 func deeplyReplace(copy, original reflect.Value, replaceMap map[string]any) error {
@@ -71,11 +59,7 @@ func deeplyReplace(copy, original reflect.Value, replaceMap map[string]any) erro
 			return nil
 		}
 		// Allocate a new object and set the pointer to it
-		if originalValue.CanSet() {
-			copy.Set(reflect.New(originalValue.Type()))
-		} else {
-			copyUnexported(copy, original)
-		}
+		copy.Set(reflect.New(originalValue.Type()))
 		// Unwrap the newly created pointer
 		if err := deeplyReplace(copy.Elem(), originalValue, replaceMap); err != nil {
 			// Not wrapping the error, since this is a recursive function. Avoids excessively long error messages.
@@ -100,18 +84,14 @@ func deeplyReplace(copy, original reflect.Value, replaceMap map[string]any) erro
 			// Not wrapping the error, since this is a recursive function. Avoids excessively long error messages.
 			return err
 		}
-		if copy.CanSet() {
-			copy.SetString(templated)
-		} else {
-			copyValueIntoUnexported(copy, reflect.ValueOf(templated))
-		}
+		copy.SetString(templated)
 		return nil
 
 	// And everything else will simply be taken from the original
 	default:
 		// We only support pointers, structs, or strings. More complex types should be represented as YAML/JSON strings
 		// for the greatest templating flexibility.
-		return fmt.Errorf("failed to template field of type %T: must be pointer, struct, or string", original)
+		return fmt.Errorf("encountered field of type %s instead of supported types pointer, struct, or string: please report this as a bug", original.Kind())
 	}
 	return nil
 }

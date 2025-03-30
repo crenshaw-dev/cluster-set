@@ -18,17 +18,17 @@ package controller
 
 import (
 	"context"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	argoprojiov1alpha1 "github.com/crenshaw-dev/cluster-set/api/v1alpha1"
+	v1alpha1 "github.com/crenshaw-dev/cluster-set/api/v1alpha1"
 )
 
 var _ = Describe("ClusterSet Controller", func() {
@@ -41,20 +41,20 @@ var _ = Describe("ClusterSet Controller", func() {
 			Name:      resourceName,
 			Namespace: "default", // TODO(user):Modify as needed
 		}
-		clusterset := &argoprojiov1alpha1.ClusterSet{}
+		clusterset := &v1alpha1.ClusterSet{}
 
 		BeforeEach(func() {
 			By("creating the custom resource for the Kind ClusterSet")
 			err := k8sClient.Get(ctx, typeNamespacedName, clusterset)
 			if err != nil && errors.IsNotFound(err) {
-				resource := &argoprojiov1alpha1.ClusterSet{
+				resource := &v1alpha1.ClusterSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resourceName,
 						Namespace: "default",
 					},
-					Spec: argoprojiov1alpha1.ClusterSetSpec{
-						Generator: argoprojiov1alpha1.ClusterSetGenerator{
-							List: &argoprojiov1alpha1.ListGenerator{
+					Spec: v1alpha1.ClusterSetSpec{
+						Generator: v1alpha1.ClusterSetGenerator{
+							List: &v1alpha1.ListGenerator{
 								Elements: []apiextensionsv1.JSON{
 									{
 										Raw: []byte(`{"server": "https://example.com"}`),
@@ -62,11 +62,11 @@ var _ = Describe("ClusterSet Controller", func() {
 								},
 							},
 						},
-						Template: argoprojiov1alpha1.ClusterTemplate{
-							Metadata: argoprojiov1alpha1.ClusterTemplateMetadata{
+						Template: v1alpha1.ClusterTemplate{
+							Metadata: v1alpha1.ClusterTemplateMetadata{
 								Name: resourceName,
 							},
-							Spec: argoprojiov1alpha1.ClusterTemplateSpec{
+							Spec: v1alpha1.ClusterTemplateSpec{
 								Server: "{{ .server }}",
 							},
 						},
@@ -79,7 +79,7 @@ var _ = Describe("ClusterSet Controller", func() {
 
 		AfterEach(func() {
 			// TODO(user): Cleanup logic after each test, like removing the resource instance.
-			resource := &argoprojiov1alpha1.ClusterSet{}
+			resource := &v1alpha1.ClusterSet{}
 			err := k8sClient.Get(ctx, typeNamespacedName, resource)
 			Expect(err).NotTo(HaveOccurred())
 

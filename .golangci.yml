@@ -42,6 +42,9 @@ linters:
     - unused
 
 linters-settings:
+  goconst:
+    # Ignore bool strings, we use those to validate string fields that hold booleans.
+    ignore-strings: 'true|false'
   revive:
     rules:
       - name: comment-spacings

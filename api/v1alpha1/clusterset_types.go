@@ -94,6 +94,7 @@ type ClusterTemplateMetadata struct {
 	Annotations string `json:"annotations,omitempty"`
 }
 
+// nolint:revive
 /**
 ClusterTemplateSpec is basically a copy of the Cluster struct from Argo CD, reformatted a bit to make it easier to
 template over. For example, instead of being a JSON string, the `config` field is an actual struct. And instead of being
