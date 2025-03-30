@@ -1,0 +1,216 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.17.2
+  name: clustersets.argoproj.io
+spec:
+  group: argoproj.io
+  names:
+    kind: ClusterSet
+    listKind: ClusterSetList
+    plural: clustersets
+    singular: clusterset
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: ClusterSet is the Schema for the clustersets API.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ClusterSetSpec defines the desired state of ClusterSet.
+            properties:
+              generator:
+                description: Generator is a generator that produces a list of parameters
+                  for templating clusters.
+                properties:
+                  list:
+                    description: List is a list generator, used to define static lists
+                      of clusters.
+                    properties:
+                      elements:
+                        description: Elements is a static list of elements to be produced
+                          by the list generator.
+                        items:
+                          x-kubernetes-preserve-unknown-fields: true
+                        type: array
+                    type: object
+                type: object
+              template:
+                description: Template is a template of a cluster to be generated.
+                properties:
+                  metadata:
+                    description: Metadata is the metadata of the cluster template.
+                    properties:
+                      annotations:
+                        description: Annotations for cluster secret metadata. Must
+                          be a JSON or YAML string.
+                        type: string
+                      labels:
+                        description: Labels for cluster secret metadata. Must be a
+                          JSON or YAML string.
+                        type: string
+                      name:
+                        description: Name is the name of the cluster Secret.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  spec:
+                    description: Spec is the specification of the cluster template.
+                    properties:
+                      awsAuthConfig:
+                        description: AWSAuthConfig contains IAM authentication configuration
+                        properties:
+                          clusterName:
+                            description: ClusterName contains AWS cluster name
+                            type: string
+                          profile:
+                            description: |-
+                              Profile contains optional role ARN. If set then AWS IAM Authenticator uses the profile to perform cluster
+                              operations instead of the default AWS credential provider chain.
+                            type: string
+                          roleARN:
+                            description: |-
+                              RoleARN contains optional role ARN. If set then AWS IAM Authenticator assume a role to perform cluster operations
+                              instead of the default AWS credential provider chain.
+                            type: string
+                        type: object
+                      bearerToken:
+                        description: BearerToken is the bearer token for authentication.
+                        type: string
+                      clusterResources:
+                        description: |-
+                          ClusterResources indicates if cluster level resources should be managed. This setting is used only if cluster is
+                          connected in a namespaced mode. Must be either "true" or "false".
+                        enum:
+                        - true
+                        - false
+                        type: string
+                      disableCompression:
+                        description: |-
+                          DisableCompression bypasses automatic GZip compression requests to the server. Must be exactly either "true" or
+                          "false".
+                        enum:
+                        - true
+                        - false
+                        type: string
+                      execProviderConfig:
+                        description: ExecProviderConfig contains configuration for
+                          an exec provider.
+                        properties:
+                          apiVersion:
+                            description: Preferred input version of the ExecInfo
+                            type: string
+                          args:
+                            description: |-
+                              Args is a list of arguments to pass to the command when executing it. Must be formatted as a YAML- or JSON-
+                              encoded array of strings.
+                            type: string
+                          command:
+                            description: Command to execute
+                            type: string
+                          env:
+                            description: |-
+                              Env defines additional environment variables to expose to the process. Must be formatted as a YAML- or JSON-
+                              encoded map of strings to strings.
+                            type: string
+                          installHint:
+                            description: This text is shown to the user when the executable
+                              doesn't seem to be present
+                            type: string
+                        type: object
+                      name:
+                        description: Name is the name of the cluster.
+                        type: string
+                      namespaces:
+                        description: |-
+                          Namespaces holds list of namespaces which are accessible in that cluster. Cluster level resources will be ignored
+                          if namespace list is not empty. Must be formatted as a YAML- or JSON-encoded array of strings.
+                        type: string
+                      password:
+                        description: Password is the password for basic authentication.
+                        type: string
+                      project:
+                        description: |-
+                          Project is a reference between project and cluster that allow you automatically to be added as item inside
+                          Destinations project entity.
+                        type: string
+                      proxyUrl:
+                        description: ProxyUrl is the URL to the proxy to be used for
+                          all requests send to the server.
+                        type: string
+                      server:
+                        description: Server is the URL of the Kubernetes API server.
+                        type: string
+                      tlsClientConfig:
+                        description: TLSClientConfig is the TLS client configuration
+                          for the cluster.
+                        properties:
+                          caData:
+                            description: CAData holds a PEM-encoded bytes (typically
+                              read from a root certificates bundle).
+                            type: string
+                          certData:
+                            description: CertData holds a PEM-encoded string (typically
+                              read from a client certificate file).
+                            type: string
+                          insecure:
+                            description: |-
+                              Insecure specifies that the server should be accessed without verifying the TLS certificate. For testing only.
+                              Must be exactly either "true" or "false".
+                            enum:
+                            - true
+                            - false
+                            type: string
+                          keyData:
+                            description: KeyData holds a PEM-encoded bytes (typically
+                              read from a client certificate key file).
+                            type: string
+                          serverName:
+                            description: |-
+                              ServerName is passed to the server for SNI and is used in the client to check server
+                              certificates against. If ServerName is empty, the hostname used to contact the
+                              server is used.
+                            type: string
+                        type: object
+                      username:
+                        description: Username is the username for basic authentication.
+                        type: string
+                    required:
+                    - server
+                    type: object
+                required:
+                - metadata
+                - spec
+                type: object
+            required:
+            - template
+            type: object
+          status:
+            description: ClusterSetStatus defines the observed state of ClusterSet.
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

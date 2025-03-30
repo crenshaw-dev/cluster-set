@@ -1,0 +1,101 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ClusterSet
+metadata:
+  name: "example-cluster-set"
+spec:
+  generator:
+    list:
+      # Static list of elements to be produced by the list generator
+      elements:
+        - name: "example-cluster"
+          server: "https://example-cluster.example.com"
+  template:
+    metadata:
+      name: "{{.name}}"
+
+      # Labels and annotations are YAML/JSON strings for flexible templating.
+      labels: |
+        example: label
+      annotations: |
+        example: annotation
+    spec:
+      server: "{{.server}}"
+      name: "{{.name}}"
+
+      # Username for basic authentication.
+      username: ""
+
+      # Password for basic authentication. DO NOT PUT PLAINTEXT PASSWORDS IN YOUR YAML FILES! Pull the value from a
+        # generator and template it into this field.
+      password: ""
+
+      # Bearer token for authentication. DO NOT PUT PLAINTEXT TOKENS IN YOUR YAML FILES! Pull the value from a
+        # generator and template it into this field.
+      bearerToken: ""
+
+      # Access server without verifying the TLS certificate
+      tlsClientConfig:
+
+        # Server name for SNI and certificate verification. Must be either "true" or "false".
+        insecure: "false"
+
+        # Server name for SNI and certificate verification
+        serverName: ""
+
+        # PEM-encoded client certificate
+        certData: ""
+
+        # PEM-encoded client certificate key
+        keyData: ""
+
+        # PEM-encoded root certificates bundle
+        caData: ""
+
+      # AWS IAM authentication configuration
+      awsAuthConfig:
+
+        # AWS cluster name
+        clusterName: ""
+
+        # Optional role ARN. If set, AWS IAM Authenticator assumes a role to perform cluster operations instead of the default AWS credential provider chain.
+        roleARN: ""
+
+        # Optional profile. If set, AWS IAM Authenticator uses the profile to perform cluster operations instead of the default AWS credential provider chain.
+        profile: ""
+
+      # Command to execute for cluster authentication
+      execProviderConfig:
+        # Command to execute for cluster authentication
+        command: ""
+
+        # Arguments to pass to the command. Must be a JSON- or YAML-encoded array of strings.
+        args: |
+          - "arg1"
+          - "arg2"
+
+        # Environment variables for the command. Must be a JSON- or YAML-encoded map of strings to strings
+        env: |
+          EXAMPLE: "env var"
+
+        # Preferred input version of the ExecInfo
+        apiVersion: ""
+
+        # Text shown when the executable is not present
+        installHint: ""
+
+      # Bypass automatic GZip compression requests. Must be either "true" or "false".
+      disableCompression: "true"
+
+      # URL of the proxy for server requests
+      proxyUrl: ""
+
+      # List of accessible namespaces in the cluster. Must be formatted as either a JSON- or YAML-encoded array of strings.
+      namespaces: |
+        - "namespace1"
+        - "namespace2"
+
+      # Manage cluster level resources. Must be either "true" or "false".
+      clusterResources: "false"
+
+      # Reference between project and cluster. Can be empty for a globally-scoped cluster.
+      project: ""
